@@ -4,6 +4,8 @@ const querystring = require("querystring");
 const fs = require("fs");
 const crypto = require("crypto");
 const sqlite3 = require("sqlite3").verbose();
+const express = require("express");
+const app = express();
 
 // 데이터베이스 설정
 const db = new sqlite3.Database("./database.db");
@@ -65,7 +67,7 @@ const server = http.createServer((req, res) => {
             const sessionId = crypto.randomBytes(16).toString("hex");
             sessions[sessionId] = username; // 세션 저장
             res.writeHead(200, {
-              "Set-Cookie": `sessionId=${sessionId}; HttpOnly`,
+              "Set-Cookie": `sessionId=${sessionId}; HttpOnly Max-Age=9`,
               "Content-Type": "text/plain",
             });
             res.end("Login successful");
