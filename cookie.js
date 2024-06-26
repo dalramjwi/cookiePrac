@@ -11,12 +11,24 @@ const db = new sqlite3.Database("./database.db");
 // 데이터베이스 초기화
 db.serialize(() => {
   db.run(
-    "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, password TEXT)"
+    "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT)",
+    (err) => {
+      if (err) {
+        console.error("Error creating table:", err.message);
+      }
+    }
   );
   db.run(
-    "INSERT OR IGNORE INTO users (username, password) VALUES ('user1', 'password1')"
+    "INSERT OR IGNORE INTO users (username, password) VALUES ('user1', 'password1')",
+    (err) => {
+      if (err) {
+        console.error("Error inserting initial data:", err.message);
+      }
+    }
   );
 });
+
+const sessions = {}; // 세션을 저장할 객체
 
 const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
@@ -24,7 +36,7 @@ const server = http.createServer((req, res) => {
 
   if (pathname === "/") {
     // index.html 파일 제공
-    fs.readFile("./index.html", (err, data) => {
+    fs.readFile("./cookie.html", (err, data) => {
       if (err) {
         res.writeHead(500, { "Content-Type": "text/plain" });
         res.end("Internal Server Error");
@@ -51,6 +63,7 @@ const server = http.createServer((req, res) => {
             res.end("Internal Server Error");
           } else if (row) {
             const sessionId = crypto.randomBytes(16).toString("hex");
+            sessions[sessionId] = username; // 세션 저장
             res.writeHead(200, {
               "Set-Cookie": `sessionId=${sessionId}; HttpOnly`,
               "Content-Type": "text/plain",
@@ -66,12 +79,15 @@ const server = http.createServer((req, res) => {
   } else if (pathname === "/check-login" && req.method === "GET") {
     // 로그인 상태 확인
     const cookies = parseCookies(req);
-    if (cookies.sessionId) {
-      res.writeHead(200, { "Content-Type": "text/plain" });
-      res.end("You are logged in");
+    const sessionId = cookies.sessionId;
+    const username = sessions[sessionId];
+
+    if (username) {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ loggedIn: true, username }));
     } else {
-      res.writeHead(401, { "Content-Type": "text/plain" });
-      res.end("You are not logged in");
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ loggedIn: false }));
     }
   } else {
     res.writeHead(404, { "Content-Type": "text/plain" });

@@ -17,20 +17,49 @@
       <button type="submit">Login</button>
     </form>
 
+    <h2>Check Login Status</h2>
+    <button id="checkStatus">Check Status</button>
+    <p id="status"></p>
+
     <script>
       document
         .getElementById("loginForm")
-        .addEventListener("submit", async function (event) {
+        .addEventListener("submit", function (event) {
           event.preventDefault();
 
-          const formData = new FormData(event.target);
-          const response = await fetch("/login", {
-            method: "POST",
-            body: new URLSearchParams(formData),
-          });
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
 
-          const result = await response.text();
-          alert(result);
+          fetch("/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `username=${encodeURIComponent(
+              username
+            )}&password=${encodeURIComponent(password)}`,
+          })
+            .then((response) => response.text())
+            .then((result) => alert(result));
+        });
+
+      document
+        .getElementById("checkStatus")
+        .addEventListener("click", function () {
+          fetch("/check-login", {
+            method: "GET",
+            credentials: "same-origin",
+          })
+            .then((response) => response.json())
+            .then((result) => {
+              if (result.loggedIn) {
+                document.getElementById(
+                  "status"
+                ).innerText = `Logged in as: ${result.username}`;
+              } else {
+                document.getElementById("status").innerText = "Not logged in";
+              }
+            });
         });
     </script>
   </body>
