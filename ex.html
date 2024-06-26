@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Example</title>
+  </head>
+  <body>
+    <h1>Login</h1>
+    <form id="loginForm">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required />
+      <br />
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required />
+      <br />
+      <button type="submit">Login</button>
+    </form>
+
+    <h2>Check Login Status</h2>
+    <button id="checkStatus">Check Status</button>
+    <p id="status"></p>
+
+    <script>
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
+
+          fetch("/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `username=${encodeURIComponent(
+              username
+            )}&password=${encodeURIComponent(password)}`,
+          })
+            .then((response) => response.text())
+            .then((result) => alert(result));
+        });
+
+      document
+        .getElementById("checkStatus")
+        .addEventListener("click", function () {
+          fetch("/check-login", {
+            method: "GET",
+          })
+            .then((response) => response.json())
+            .then((result) => {
+              if (result.loggedIn) {
+                document.getElementById(
+                  "status"
+                ).innerText = `Logged in as: ${result.username}`;
+              } else {
+                document.getElementById("status").innerText = "Not logged in";
+              }
+            });
+        });
+    </script>
+  </body>
+</html>
